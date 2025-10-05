@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gemini AI Chatbot</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .chat-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 800px;
+            height: 700px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            animation: slideUp 0.5s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .chat-header {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+        }
+
+        .chat-header h1 {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .chat-header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+
+        .api-config {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+        }
+
+        .config-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .config-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.05);
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            scroll-behavior: smooth;
+        }
+
+        .message {
+            margin-bottom: 20px;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.user {
+            text-align: right;
+        }
+
+        .message.bot {
+            text-align: left;
+        }
+
+        .message-content {
+            display: inline-block;
+            max-width: 70%;
+            padding: 15px 20px;
+            border-radius: 20px;
+            position: relative;
+            word-wrap: break-word;
+        }
+
+        .message.user .message-content {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            color: white;
+            border-bottom-right-radius: 5px;
+        }
+
+        .message.bot .message-content {
+            background: #f3f4f6;
+            color: #374151;
+            border-bottom-left-radius: 5px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .message-image {
+            max-width: 200px;
+            max-height: 200px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .chat-input-area {
+            padding: 20px;
+            background: #f9fafb;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .input-container {
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+        }
+
+        .text-input-container {
+            flex: 1;
+            position: relative;
+        }
+
+        #messageInput {
+            width: 100%;
+            padding: 15px 50px 15px 20px;
+            border: 2px solid #e5e7eb;
+            border-radius: 25px;
+            font-size: 16px;
+            outline: none;
+            transition: all 0.3s ease;
+            resize: none;
+            font-family: inherit;
+        }
+
+        #messageInput:focus {
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        .input-actions {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            gap: 5px;
+        }
+
+        .action-btn {
+            background: #4f46e5;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 35px;
+            height: 35px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .action-btn:hover {
+            background: #4338ca;
+            transform: scale(1.1);
+        }
+
+        .action-btn:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        #imageInput {
+            display: none;
+        }
+
+        .typing-indicator {
+            display: none;
+            text-align: left;
+            margin-bottom: 20px;
+        }
+
+        .typing-indicator .message-content {
+            background: #f3f4f6;
+            color: #6b7280;
+            border: 1px solid #e5e7eb;
+        }
+
+        .typing-dots {
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+        }
+
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #9ca3af;
+            animation: typingPulse 1.4s infinite;
+        }
+
+        .typing-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typingPulse {
+            0%, 60%, 100% {
+                transform: translateY(0);
+                opacity: 0.4;
+            }
+            30% {
+                transform: translateY(-10px);
+                opacity: 1;
+            }
+        }
+
+        .error-message {
+            background: #fee2e2;
+            color: #dc2626;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 10px 20px;
+            border-left: 4px solid #dc2626;
+            animation: shake 0.5s ease-in-out;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        .clear-btn {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .clear-btn:hover {
+            background: #dc2626;
+            transform: scale(1.05);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 15% auto;
+            padding: 30px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+            animation: modalPop 0.3s ease-out;
+        }
+
+        @keyframes modalPop {
+            from {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .modal h2 {
+            color: #374151;
+            margin-bottom: 20px;
+        }
+
+        #apiKeyInput {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 16px;
+            margin-bottom: 20px;
+            outline: none;
+        }
+
+        #apiKeyInput:focus {
+            border-color: #4f46e5;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .modal-btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .modal-btn.primary {
+            background: #4f46e5;
+            color: white;
+        }
+
+        .modal-btn.primary:hover {
+            background: #4338ca;
+        }
+
+        .modal-btn.secondary {
+            background: #e5e7eb;
+            color: #374151;
+        }
+
+        .modal-btn.secondary:hover {
+            background: #d1d5db;
+        }
+
+        .welcome-message {
+            text-align: center;
+            color: #6b7280;
+            margin-top: 50px;
+            padding: 20px;
+        }
+
+        .welcome-message i {
+            font-size: 48px;
+            margin-bottom: 20px;
+            color: #4f46e5;
+        }
+
+        @media (max-width: 768px) {
+            .chat-container {
+                height: 100vh;
+                border-radius: 0;
+                max-width: 100%;
+            }
+
+            .api-config {
+                position: static;
+                margin-top: 10px;
+            }
+
+            .chat-header {
+                padding: 15px;
+            }
+
+            .chat-header h1 {
+                font-size: 20px;
+            }
+
+            .message-content {
+                max-width: 85%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            <h1><i class="fas fa-robot"></i> Gemini AI Chatbot</h1>
+            <p>Powered by Google's Gemini AI</p>
+            <div class="api-config">
+                <button class="config-btn" onclick="openApiModal()">
+                    <i class="fas fa-cog"></i> API Key
+                </button>
+                <button class="clear-btn" onclick="clearHistory()">
+                    <i class="fas fa-trash"></i> Clear
+                </button>
+            </div>
+        </div>
+
+        <div class="chat-messages" id="chatMessages">
+            <div class="welcome-message">
+                <i class="fas fa-comments"></i>
+                <h3>Welcome to Gemini AI Chatbot!</h3>
+                <p>Start a conversation by typing a message or uploading an image.</p>
+                <p><small>Don't forget to set your API key first.</small></p>
+            </div>
+        </div>
+
+        <div class="typing-indicator" id="typingIndicator">
+            <div class="message-content">
+                <div class="typing-dots">
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                </div>
+                <span style="margin-left: 10px;">AI is thinking...</span>
+            </div>
+        </div>
+
+        <div class="chat-input-area">
+            <div id="imagePreviewContainer" style="display: none; position: relative; margin-bottom: 10px; background: #f3f4f6; padding: 10px; border-radius: 10px; text-align: center;">
+                <img id="imagePreview" src="" style="max-width: 100px; max-height: 100px; border-radius: 10px;" />
+                <button onclick="removeImage()" style="position: absolute; top: 0px; right: 0px; background: #ef4444; color: white; border: none; border-radius: 50%; cursor: pointer; width: 24px; height: 24px; font-size: 14px; line-height: 24px;">&times;</button>
+            </div>
+            <div class="input-container">
+                <div class="text-input-container">
+                    <textarea 
+                        id="messageInput" 
+                        placeholder="Type your message here..." 
+                        rows="1"
+                        onkeydown="handleKeyPress(event)"
+                    ></textarea>
+                    <div class="input-actions">
+                        <button class="action-btn" onclick="document.getElementById('imageInput').click()" title="Upload Image">
+                            <i class="fas fa-image"></i>
+                        </button>
+                        <button class="action-btn" id="sendBtn" onclick="sendMessage()" title="Send Message">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                    <input type="file" id="imageInput" accept="image/*" onchange="handleImageUpload(event)">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- API Key Modal -->
+    <div id="apiModal" class="modal">
+        <div class="modal-content">
+            <h2><i class="fas fa-key"></i> Configure API Key</h2>
+            <p style="color: #6b7280; margin-bottom: 20px;">Enter your Google Gemini API key to start chatting.</p>
+            <input type="password" id="apiKeyInput" placeholder="Enter your Gemini API key..." />
+            <div class="modal-buttons">
+                <button class="modal-btn secondary" onclick="closeApiModal()">Cancel</button>
+                <button class="modal-btn primary" onclick="saveApiKey()">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let apiKey = localStorage.getItem('geminiApiKey') || '';
+        let pendingImage = null;
+        
+        const messageInput = document.getElementById('messageInput');
+        messageInput.addEventListener('input', function(){
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+        });
+
+        function openApiModal() {
+            document.getElementById('apiModal').style.display = 'block';
+            document.getElementById('apiKeyInput').value = apiKey;
+            document.getElementById('apiKeyInput').focus();
+        }
+
+        function closeApiModal() {
+            document.getElementById('apiModal').style.display = 'none';
+        }
+
+        function saveApiKey() {
+            const newApiKey = document.getElementById('apiKeyInput').value.trim();
+            if (newApiKey) {
+                apiKey = newApiKey;
+                localStorage.setItem('geminiApiKey', apiKey);
+                closeApiModal();
+                showMessage('✓ API key saved successfully!', 'success');
+            } else {
+                alert('Please enter a valid API key.');
+            }
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendMessage();
+            }
+        }
+
+        function showTyping() {
+            document.getElementById('typingIndicator').style.display = 'block';
+            scrollToBottom();
+        }
+
+        function hideTyping() {
+            document.getElementById('typingIndicator').style.display = 'none';
+        }
+
+        function showMessage(text, type = 'info') {
+            const chatMessages = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `error-message ${type}`;
+            messageDiv.innerHTML = text;
+            chatMessages.appendChild(messageDiv);
+            scrollToBottom();
+
+            setTimeout(() => {
+                messageDiv.remove();
+            }, 4000);
+        }
+
+        function addMessage(content, type, imageData = null) {
+            const chatMessages = document.getElementById('chatMessages');
+            const welcomeMessage = chatMessages.querySelector('.welcome-message');
+            if (welcomeMessage) {
+                welcomeMessage.remove();
+            }
+
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}`;
+            
+            let messageContent = '<div class="message-content">';
+            
+            if (imageData) {
+                messageContent += `<img src="${imageData}" alt="Uploaded image" class="message-image"><br>`;
+            }
+            
+            // Remove markdown characters like * for bolding
+            const processedContent = content.replace(/\*/g, '');
+            messageContent += processedContent.replace(/\n/g, '<br>');
+            messageContent += '</div>';
+            
+            messageDiv.innerHTML = messageContent;
+            chatMessages.appendChild(messageDiv);
+            scrollToBottom();
+        }
+
+        function scrollToBottom() {
+            const chatMessages = document.getElementById('chatMessages');
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        async function sendMessage() {
+            const messageInput = document.getElementById('messageInput');
+            const message = messageInput.value.trim();
+            
+            if (!message && !pendingImage) return;
+            
+            if (!apiKey) {
+                openApiModal();
+                return;
+            }
+
+            const sendBtn = document.getElementById('sendBtn');
+            sendBtn.disabled = true;
+            
+            addMessage(message, 'user', pendingImage);
+            
+            messageInput.value = '';
+            messageInput.style.height = 'auto';
+            
+            showTyping();
+
+            try {
+                const payload = {
+                    message: message,
+                    api_key: apiKey
+                };
+
+                if (pendingImage) {
+                    payload.image = pendingImage;
+                }
+
+                const response = await fetch('/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    addMessage(data.response, 'bot');
+                } else {
+                    showMessage(data.error || 'An error occurred', 'error');
+                }
+            } catch (error) {
+                showMessage('Network error: ' + error.message, 'error');
+            } finally {
+                hideTyping();
+                sendBtn.disabled = false;
+                removeImage();
+            }
+        }
+
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            if (file.size > 5 * 1024 * 1024) {
+                showMessage('Image too large. Please select an image under 5MB.', 'error');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                pendingImage = e.target.result;
+                document.getElementById('imagePreview').src = e.target.result;
+                document.getElementById('imagePreviewContainer').style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function removeImage() {
+            pendingImage = null;
+            document.getElementById('imageInput').value = '';
+            document.getElementById('imagePreviewContainer').style.display = 'none';
+        }
+
+        async function clearHistory() {
+            if (confirm('Are you sure you want to clear the chat history?')) {
+                try {
+                    await fetch('/clear_history', { method: 'POST' });
+                    document.getElementById('chatMessages').innerHTML = `
+                        <div class="welcome-message">
+                            <i class="fas fa-comments"></i>
+                            <h3>Chat cleared!</h3>
+                            <p>Start a new conversation by typing a message or uploading an image.</p>
+                        </div>
+                    `;
+                } catch (error) {
+                    showMessage('Failed to clear history', 'error');
+                }
+            }
+        }
+
+        async function loadHistory() {
+            try {
+                const response = await fetch('/get_history');
+                const data = await response.json();
+                
+                if (data.history && data.history.length > 0) {
+                    const chatMessages = document.getElementById('chatMessages');
+                    chatMessages.innerHTML = '';
+                    
+                    data.history.forEach(item => {
+                        addMessage(item.message, item.type, item.image);
+                    });
+                }
+            } catch (error) {
+                console.error('Failed to load history:', error);
+            }
+        }
+
+        window.onload = function() {
+            loadHistory();
+            if (!apiKey) {
+                setTimeout(openApiModal, 1000);
+            }
+        };
+
+        window.onclick = function(event) {
+            const modal = document.getElementById('apiModal');
+            if (event.target === modal) {
+                closeApiModal();
+            }
+        };
+    </script>
+</body>
+</html>
+</html>
